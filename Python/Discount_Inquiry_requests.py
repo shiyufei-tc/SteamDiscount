@@ -1,5 +1,8 @@
 import requests
 from lxml import html
+import csv
+import os
+import Data_analyze
 
 DISCOUNT_URL_50="https://store.steampowered.com/search/?hwtype=0&supportedlang=schinese&specials=1&ndl=1"
 DISCOUNT_URL_50M="https://store.steampowered.com/search/results/?query=&start={}&count=50&dynamic_data=&sort_by=_ASC&hwtype=0&supportedlang=schinese&snr=1_7_7_2300_7&specials=1&infinite=1"
@@ -38,15 +41,35 @@ def parse_html(html_text):
         })
     return Page_Games
 
+def save_csv(all_games):
+    if not os.path.exists("data"):
+        os.mkdir("data")
+    with open("data/Games.csv",'w',encoding='utf-8') as f:
+        writer=csv.DictWriter(f,fieldnames=['name','discount','original_price','final_price'])
+        writer.writeheader()
+        writer.writerows(all_games)
+
 def main():
+    number_games=int(input())
+    if number_games>50:
+        numper_pages=number_games//50
+    else:
+        number_games=1
     All_games=[]
-    for page_num in range(1,4):
+    for page_num in range(1,numper_pages+1):
         if page_num==1:
             html_text=get_response(DISCOUNT_URL_50)
         else:
             html_text=get_response(DISCOUNT_URL_50M.format(50*(page_num-1)))
         Page_Games=parse_html(html_text)
         All_games.extend(Page_Games)
-    print(All_games)
+    save_csv(All_games)
+    df=Data_analyze.get_pandas()
+    if df is None:
+        print("没有data文件夹中或无法打开文件")
+    else:
+        Data_analyze.Data_cleaning(df)
+
+
 if __name__=="__main__":
     main()
