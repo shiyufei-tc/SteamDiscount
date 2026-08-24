@@ -1,5 +1,10 @@
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
+
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Noto Sans CJK SC", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 
 def get_pandas():
     if os.path.exists("data"): 
@@ -15,7 +20,7 @@ def Data_cleaning(df:pd):
     
     df['discount']=df['discount'].str.replace("%",'')
     df["discount"] = df["discount"].str.strip()
-    df["discount"] = df["discount"].astype(int)
+    df['discount']=pd.to_numeric(df['discount'],errors="coerce")
     negative_discount_mask =(df['discount']< -100) | (df['discount']>0)
     negative_discount=df.loc[negative_discount_mask]
     if len(negative_discount)!=0:
@@ -36,3 +41,5 @@ def Data_cleaning(df:pd):
     if len(negative_f_price)!=0 or len(negative_o_price)!=0:
         print("价格存在异常")
     print(df)
+    
+    df.to_csv("data/Games.csv",encoding='utf-8',index=False)
