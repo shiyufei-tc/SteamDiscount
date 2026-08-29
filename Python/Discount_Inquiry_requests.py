@@ -3,14 +3,24 @@ from lxml import html
 import csv
 import os
 import Data_analyze
+import logging
 
 DISCOUNT_URL_50="https://store.steampowered.com/search/?hwtype=0&supportedlang=schinese&specials=1&ndl=1"
 DISCOUNT_URL_50M="https://store.steampowered.com/search/results/?query=&start={}&count=50&dynamic_data=&sort_by=_ASC&hwtype=0&supportedlang=schinese&snr=1_7_7_2300_7&specials=1&infinite=1"
 
+logging.basicConfig(
+    level=logging.INFO,
+    format=(
+        "%(asctime)s - %(levelname)s - "
+        "[%(name)s:%(filename)s:%(lineno)d] - %(message)s"
+    ),
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 #发送请求
 def get_response(discount_url):
     response=requests.get(discount_url,timeout=10)
-    print(f"向{discount_url}发送请求")
+    logging.info(f"向{discount_url}发送请求")
 
     #50个游戏即第1页之后之后的响应html在json文件中，看响应体的json文件
     content_type = response.headers.get("Content-Type", "")
@@ -66,7 +76,7 @@ def main():
     save_csv(All_games)
     df=Data_analyze.get_pandas()
     if df is None:
-        print("没有data文件夹中或无法打开文件")
+        logging.info("没有data文件夹中或无法打开文件")
     else:
         Data_analyze.Data_cleaning(df)
 
