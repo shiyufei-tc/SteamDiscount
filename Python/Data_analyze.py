@@ -18,14 +18,23 @@ plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = ["Noto Sans CJK SC", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
-def get_pandas():
+def get_pandas() -> pd.DataFrame | None:
+    """
+        函数作用:读取CSV文件中的游戏数据并返回pandas DataFrame
+        return:返回读取到的数据表,若data目录不存在则返回None
+    """
     if os.path.exists("data"): 
         df=pd.read_csv("data/Games.csv")
         return df
     else:
         return None
 
-def Data_cleaning(df:pd):
+def Data_cleaning(df: pd.DataFrame) -> pd.DataFrame:
+    """
+        函数作用:清洗游戏数据并将处理结果写回CSV文件
+        param df:待清洗的DataFrame
+        return:返回清洗后的DataFrame
+    """
     isnull_df=df.isna().sum()
     if isnull_df.any():
         logging.info("存在缺失值")
@@ -55,3 +64,4 @@ def Data_cleaning(df:pd):
     logging.info(df)
     
     df.to_csv("data/Games.csv",encoding='utf-8',index=False)
+    return df
