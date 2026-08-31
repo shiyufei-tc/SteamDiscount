@@ -4,6 +4,20 @@ import csv
 import os
 import Data_analyze
 import logging
+from fastapi import FastAPI,Request,status
+from starlette.responses import FileResponse,JSONResponse
+
+serve=FastAPI(title="discount")
+
+@serve.exception_handler(Exception)
+def handler_exception(request:Request,exc:Exception):
+    logging.error(f"处理异常，请求路径{request.url},异常信息{exc}")
+    return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"code":500,"message":"服务器内部错误","data":None})
+
+@serve.get("/")
+def root():
+    return FileResponse("data/Games.csv")
 
 DISCOUNT_URL_50="https://store.steampowered.com/search/?hwtype=0&supportedlang=schinese&specials=1&ndl=1"
 DISCOUNT_URL_50M="https://store.steampowered.com/search/results/?query=&start={}&count=50&dynamic_data=&sort_by=_ASC&hwtype=0&supportedlang=schinese&snr=1_7_7_2300_7&specials=1&infinite=1"
