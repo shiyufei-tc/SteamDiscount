@@ -1,7 +1,6 @@
 import pandas as pd
-import os
+import os,logging
 import matplotlib.pyplot as plt
-import logging
 
 
 logging.basicConfig(

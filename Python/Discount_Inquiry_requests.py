@@ -1,10 +1,5 @@
-import requests
-import uvicorn
+import requests,uvicorn,csv,os,Data_analyze,logging
 from lxml import html
-import csv
-import os
-import Data_analyze
-import logging
 from fastapi import FastAPI,Request,status
 from starlette.responses import FileResponse,JSONResponse
 
