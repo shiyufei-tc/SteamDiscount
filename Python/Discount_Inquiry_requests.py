@@ -1,4 +1,4 @@
-import requests,uvicorn,csv,os,Data_analyze,logging
+import requests,uvicorn,csv,os,Data_analyze,logging,asyncio
 from lxml import html
 from fastapi import FastAPI,Request,status
 from starlette.responses import FileResponse,JSONResponse
@@ -27,23 +27,23 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-def get_response(discount_url: str) -> str:
+async def get_response(discount_url: str) -> str:
     """
         函数作用:向steam发送请求
         param discount_url:打折页面的链接
         return:返回响应页面的html源码,若返回的是json数据则提取results_html内容
     """
-    response=requests.get(discount_url,timeout=10)
-    logging.info(f"向{discount_url}发送请求")
-
+    if discount_url==DISCOUNT_URL_50:
+        response=await requests.get(discount_url,timeout=10)
+        logging.info(f"向{discount_url}发送请求")
+        response.encoding='utf-8'
+        return response.text
+    
     #50个游戏即第1页之后之后的响应html在json文件中，看响应体的json文件
-    content_type = response.headers.get("Content-Type", "")
+    content_type =await response.headers.get("Content-Type", "")
     if "application/json" in content_type:
         result = response.json()
         return result.get("results_html", "")
-    
-    response.encoding='utf-8'
-    return response.text
 
 def get_text(node, xpath: str) -> str | None:
     """
@@ -88,23 +88,11 @@ def save_csv(all_games: list[dict[str, str | None]]):
         writer.writeheader()
         writer.writerows(all_games)
 
-def main():
+def Data(All_games:list[dict[str, str | None]]):
     """
-        函数作用:从用户输入中获取游戏数量并执行抓取、保存和清洗流程
+        函数作用:执行保存和清洗流程
+        param All_games:要写入CSV的游戏列表
     """
-    number_games=int(input())
-    if number_games>50:
-        numper_pages=number_games//50
-    else:
-        number_games=1
-    All_games=[]
-    for page_num in range(1,numper_pages+1):
-        if page_num==1:
-            html_text=get_response(DISCOUNT_URL_50)
-        else:
-            html_text=get_response(DISCOUNT_URL_50M.format(50*(page_num-1)))
-        Page_Games=parse_html(html_text)
-        All_games.extend(Page_Games)
     save_csv(All_games)
     df=Data_analyze.get_pandas()
     if df is None:
@@ -112,7 +100,30 @@ def main():
     else:
         Data_analyze.Data_cleaning(df)
 
+async def main():
+    """
+        函数作用:异步从用户输入中获取游戏数量并执行抓取、解析流程
+    """
+    number_games=int(input())
+    if number_games>50:
+        numper_pages=number_games//50
+    else:
+        number_games=1
+    All_games=[]
+    tasks=[]
+    for page_num in range(1,numper_pages+1):
+        if page_num==1:
+            task=asyncio.create_task(get_response(DISCOUNT_URL_50))
+            tasks.append(task)
+        else:
+            task=asyncio.create_task(get_response(DISCOUNT_URL_50M.format(50*(page_num-1))))
+            tasks.append(task)
+    html_texts=asyncio.gather(*tasks)
+    for html_text in html_texts:
+        Page_Games=parse_html(html_text)
+        All_games.extend(Page_Games)
+    Data(All_games)
 
 if __name__=="__main__":
     uvicorn.run(serve,host="0.0.0.0",port=8000)
-    main()
+    asyncio.run(main())
